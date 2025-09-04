@@ -6,7 +6,11 @@ from openai import OpenAI
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-client = OpenAI(api_key=GROQ_API_KEY)
+# ✅ Correctly configure Groq endpoint
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1"
+)
 
 # 📄 Load notes once when bot starts
 try:
