@@ -13,7 +13,7 @@ import asyncio
 
 # 🧠 Your Groq API setup
 client = OpenAI(
-    api_key="GROQ_API_KEY",   # 🔑 Replace with your Groq API key
+    api_key="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",   # 🔑 Replace with your Groq API key
     base_url="https://api.groq.com/openai/v1"
 )
 
@@ -55,7 +55,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(answer)
 
 # 🚀 Telegram Bot Setup
-BOT_TOKEN = "BOT_TOKEN"   # 🔑 Replace with your BotFather token
+BOT_TOKEN = "8200407917:AAEN5sGHMyDXUhYukI-30NMpCBtw9PD3fcM"   # 🔑 Replace with your BotFather token
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start_command))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -71,5 +71,6 @@ async def main():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
+
 
 
