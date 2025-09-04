@@ -1,0 +1,293 @@
+SWITCH DEBOUNCE
+Switch debounce is Mechanical switches produce bouncing. Debouncing removes noise for clean
+signals. Switch debounce is when a button is pressed or released, and it makes multiple rapid electrical contacts. This causes false multiple signals instead of one clean signal. There are 2 switches at the switch debounce which is A and B. A for active high which mean led will light up at 1 and B is active low which is it will light up at 0. If you press the switch for along time, the output will stay constant depending on the switch. A gives HIGH, B gives LOW, held state keeps signal unchanged. To test the switch debounce. You can connect it to 8 bit output led/ digital input (one of the led) to see the different between active high and low. If you connect active high then led will light off, when you press the button then led will light up. Next if you connect active low, then led will light up and when u press switch B, led will light off.
+
+
+esp32
+The ESP32 is the main microcontroller used on the Hybrid Digital Trainer to control and test digital circuits. It has Digital Output (DO) pins to send signals (such as to DO LEDs or 7-segment displays) and Digital Input (DI) pins to receive logic signals from switches, logic ICs, or other components. The input pins are DI0 to DI3, which correspond to Pin 34, 35, 32, and 33 on the ESP32. The output pins are DO0 to DO3, which are Pin 5, 27, 14, and 12. For safety, you must connect the signal to the Digital Input (DI) port first before reaching the ESP32 input pin, because the trainer board runs at 5V,while the ESP32 only supports 3.3V. The DI port includes a voltage divider (using 10kΩ and 20kΩ resistors) to safely reduce the voltage. To test output, connect the ESP32 output pins (Pin 5, 27, 14, 12) to the Digital Output (DO) port of the board, then connect jumper wires from DO to DO LEDs, 7- segment, or IC inputs. The ESP32 also supports UART communication to external modules such as HMI. The TX pin (Pin 1) from ESP32 should be connected to the RX pin of the HMI, and RX pin (Pin 3) should go to the TX pin of the HMI. Always ensure GND is shared between ESP32 and connected modules. This setup allows the ESP32 to control, test, and communicate with logic circuits safely and effectively. digital output The Digital Output (DO) section on the Hybrid Digital Trainer is used to display output logic states using LEDs, allowing students to visually confirm whether a signal is logic HIGH (1) or LOW (0). It functions as a simple indicator to test outputs from ICs. You can connect signals to DO from various sources such as debounce switches, clock output, ESP32 output pins, or 8-bit logic switches, but you must connect through an IC (e.g., NOT, AND, or other gates) before reaching the DO LED — direct connection from switch or logic source to DO LED is not recommended as it may not function correctly or damage components. When using debounce switches, pressing Switch A (active high) sends a HIGH signal to the IC, which is then processed and sent to DO. The LED on the DO line will turn ON or OFF depending on the logic inversion and LED polarity. This clean output confirms that the debounce circuit works and removes flickering. Similarly, logic switches or clock signals can be routed through ICs to DO, allowing for real-time testing of logic circuits and timing behavior. The DO section is flexible and supports a wide range of testing setups, but always ensure signals are routed properly through ICs and jumper wires for safe and correct operation. For more advanced use, the ESP32 can read DI inputs
+through pins like Pin 34, 35, 32, or 33, which are input-only. Since ESP32 operates at 3.3V, while most trainer components use 5V logic, the DI section includes two resistors(typically 10kΩ and 20kΩ) that act as a voltage divider, safely dropping the voltage from 5V to around
+3.3V before it reaches the ESP32. This prevents damage to the microcontroller and ensures stable
+signal reading
+digital input
+The Digital Input (DI) section is used to safely send logic signals into the trainer system, especially to
+microcontrollers like the ESP32, or to logic ICs for processing. Its main function is to receive digital
+signals (either HIGH or LOW) from external sources such as debounce switches, 8-bit logic switches,
+clock signals, or other circuits. You can connect a Switch A or Switch B directly to a DI pin to simulate
+button input, or use any bit from the 8-bit logic switch to send a manual HIGH/LOW signal into the DI
+section. The clock output can also be connected to a DI pin to test how timing pulses behave inside a
+circuit. This digital input can also be controlled by the hmi and phone. For example, if u want to test
+the ic. You can just light up 2 led at the digital input by using the hmi indicates high signal been sent.
+timer clock
+The Timer Clock (CLK) section generates a continuous square wave signal that alternates between
+HIGH and LOW logic levels, used to control timing-based circuits like counters, flip-flops, or 7- segment
+displays. The blinking speed or pulse frequency of the clock output can be adjusted using the rotary
+potentiometer knob located in the clock section — turning it clockwise will increase the frequency,
+making connected LEDs or circuits blink faster, while turning it counter clockwise will reduce the
+frequency, causing slower blinking. You can connect the clock output to the input of an ICand observe
+the result at the output pins, such as on the 8-bit LED or 7-segment display. For a simplevisual test,
+you can connect it at 8 bit output led. You can see the led blink continuously or don’teven blink
+because it too fast. What you can do right here, turn the potentiometer and you will led start to blink
+because the potentiometer control the frequency.
+
+
+7 segment
+The 7-segment display is used to show alphanumeric characters, most commonly numbers (0–9) and
+some letters (A–G), by controlling the seven individual segment lines labeled A to G. The display on
+the Hybrid Digital Trainer is typically common cathode, meaning all the cathodes (negative terminals)
+of the LED segments are connected together and should be connected to GND (ground), while each
+segment is individually powered with a logic HIGH (1) to light it up. To power up the 7- segment, first
+connect the common cathode pin to ground, then supply HIGH signals to specific segment pins
+depending on the character you want to display — for example, to show the letter A, you must activate
+segments A, B, C, E, F, and G. This can be done using jumper wires from sources like the 8-bit logic
+switch. The connection methods include: (1) manual control using 8-bit logic switches where you
+connect each switch line to a segment and toggle HIGH/LOW manually; (2) automated control using
+clock + IC like 4026, where the IC output is wired directly to the segment pins for counting displays.
+logic testing using DI outputs from the board, which may be routed through NOT gates depending
+on configuration. Always ensure each segment receives a properHIGH signal, and optionally use
+resistors to protect the segments from overcurrent.8 bit logic switch
+The 8-bit logic switch functions as a manual input to provide HIGH (1) or LOW (0) digital signals across
+eight lines for testing purposes. the switch sends 5V to the connected circuit, lighting up an LED or
+activating logic inputs; touch it again routes the output to ground (0V), turning the signal OFF.If you
+touch it for a long time, you can see the led getting brighter or fade. For connections, you can:
+(1) connect each switch line directly to the 8-bit output LED to observe binary patterns, (2) connect
+any switch output to the input pins of logic ICs, (3) connect four switches (bit 0–3) to 7-segment
+decoder IC to drive a 7-segment display, connect to flip-flop ICs for memory/control testing.
+
+
+HMI DISPLAY
+The HMI (Human-Machine Interface) display functions as a visual and interactive interface between
+the user and the Hybrid Digital Trainer, allowing data from the ESP32 or trainer board to be displayed
+in real time and enabling control through touch buttons or on-screen menus. It communicates with
+the ESP32 via UART, where the TX pin of the ESP32 (Pin 1) is connected to the RXpin of the HMI, and
+the RX pin of the ESP32 (Pin 3) is connected to the TX pin of the HMI, with a shared GND connection
+to complete the circuit. This setup allows the HMI to receive output data such as sensor readings, LED
+status, or test results, and to send user commands back to the ESP32for processing. By providing a
+graphical interface, the HMI replaces the need to monitor multiple LEDs or raw IC outputs directly,
+making it easier for students to observe system behavior and interact with the trainer effectively. So
+next is the way on how to connect HMI display to our phone, firstly plug in the USB cable (power bank/
+charger adapter) to power up the digital trainer. After connecting it in, u can just touch the on/off at
+the power section below. Next, HMI display will automatically show Wi-Fi SSID, Password and IP
+address. Then go to Wi-Fi setup at your phone. Find and connect the Wi-Fi name shown on the screen.
+Enter the password required and wait until it connected. After Wi-Fi connected, open browser at your
+phone (google/ safari). Type the IP address shown on the HMI display and search. This part will load
+the Digital Trainer control interface. Trainer interface will appear on your phone. You can now view
+and control the trainer using your phone or HMI display. What you can see from the hmi is digital input
+and digital output. Digital input can just be controlled by the hmi. Just click the button and you will see
+the led light up. If the digital output receive high signal then u can see the digital output part (for
+example DO1) light up.
+
+
+IC CONNECTION
+For example IC 7408, the input pin is pin 1 and 2 while the output pin is pin 3. Ground located at pin
+7 and vcc located at pin 14. To test this ic, you can connect it to any section that got led such as digital
+output, 8 bit output led. For the input part, you can connect it to digital input or connect directly to
+5v. The digital input also can be controlled by the hmi and your phone, when you light up the led that
+is mean you supply 5v to the ic. If you light up 2 digital input then you provide 1 and 1 and your output
+at digital output will be one. You can see it light up at the hmi or your phone. This process applied to
+AND gate since you are using ic 7408.
+HMI DISPLAYFor the digital output at the hmi, It can be connected with ic output pin when u test the ic. If u
+connect directly with 5V u can also see it light up the digital output part on the hmi.
+You can refer to these links for guides on installing different ICs:
+HD74LS08/ 7408 : https://youtu.be/7jHRQrarSJU
+CD4017BE/ 4017 : https://youtu.be/QXFFIi5aTdE
+CD4511BE/ 4511 : https://youtu.be/itGkNrowXJI
+SN7404N/ 7404: https://youtu.be/55x9KWTLd4k
+MC14044BCP/ 4044 : https://youtu.be/f9_Wfc4YlQY
+TC4043BP / 4043: https://youtu.be/er6Kf3dRmSwIC Hybrid Digital Electronics
+
+
+--------------------------------------------------------------------------------------------
+HD74LS08P
+Quad 2-Input AND gates
+
+Description
+IC 7408 is a quad 2-input AND gate, which produces a high output only when both inputs are high. It contains four independent AND gates, each with two inputs and one output. Pin 14 is used for the power supply (Vcc), while pin 7 is connected to ground (GND). This IC is commonly used in basic logic circuits and combinational logic applications.
+
+Pin Arrangement
+it got 4 gate circuit. pin 1, 2 and 3 is for one circuit. pin 1 and 2 are input while the pin 3 is output. scond circuit is pin 4, 5 and 6 where pin 4 and 5 are input and pin 6 is output. third circuit located at pin 10, 9 and 8 where 10 and 9 are the input and pin 8 is the output. the last circuit located at pin 13, 12 and 11 where 13 and 12 are the input and pin 11 is the output. pin 7 is ground and pin 14 is vcc.
+
+Truth Table
+INPUT OUTPUT
+A B Y
+0 0 0
+0 1 0
+1 0 0
+1 1 1
+Demonstration video / wiring diagrm : https://youtu.be/7jHRQrarSJU
+--------------------------------------------------------------------------------------------
+
+
+
+CD4017BE
+Decade Counter/Divider
+
+Description
+IC 4017 is a decade counter that counts from 0 to 9. It has ten outputs (Q0-Q9), where each output goes high sequentially with every clock pulse. Its main inputs include clock, reset and enable. It is popularly used in LED chaser circuits and sequencing applications.
+
+
+Pin Arrangement
+- pin 1 = Q5
+- pin 2 = Q1
+- pin 3 = Q0
+- pin 4 = Q2
+- pin 5 = Q6
+- pin 6 = Q7
+- pin 7 = Q3
+- pin 8 = GND
+- pin 9 = Q8
+- pin 10 = Q4
+- pin 11 = Q9
+- pin 12 = Cout
+- pin 13 = clock enable
+- pin 14 = clock
+- pin 15 = reset
+- pin 16 = vcc  
+
+
+Output Table. / truth table
+Frequency (%) Output LED speed 
+600mHz (0%) Slow
+50.3Hz (50%) Medium
+100 Hz (100Hz) Fast
+
+Demonstration video / wiring diagram : https://youtu.be/QXFFIi5aTdE
+--------------------------------------------------------------------------------------------
+
+
+CD4511BE
+BCD-to-7 Segment decoder/driver
+
+Description
+IC 4511 is a BCD to 7-segment decoder/driver that converts a 4-bit BCD input into outputs for a 7- segment display. The inputs are D0-D3, while the outputs are connected to segments a-g of the display. Pin 16 is Vcc, and pin 8 is GND. It is used to easily display decimal numbers on 7-segment displays.
+
+
+Pin Arrangement
+- pin 1 = B
+- pin 2 = C
+- pin 3 = DISPLAY TEST
+- pin 4 = BLANK INPUT
+- pin 5 = STORE
+- pin 6 = D
+- pin 7 = A
+- pin 8 = GND
+- pin 9 = e
+- pin 10 = d
+- pin 11 = c
+- pin 12 = b
+- pin 13 = a
+- pin 14 = g
+- pin 15 = f
+- pin 16 = vcc 
+
+Truth Table
+INPUT   Output Display
+A             1
+B             2
+A+B           3
+C             4
+A+C           5
+B+C           6
+A+B+C         7
+D             8
+A+D           9
+
+Demonstration video / Wiring Diagram : https://youtu.be/itGkNrowXJI
+--------------------------------------------------------------------------------------------
+
+
+
+SN7404N (Hex Inverters)
+
+Description
+IC 7404 is a hex inverter (NOT gate) that inverts the input signal, meaning 0 becomes 1 and 1 becomes 0. It has six independent inverters, each with input and one output. The power supply is given at pin 14 and pin 7 is connected to GND. This is useful for signal inversion and simple logic operations. 
+
+Pin Arrangement
+it got 6 not gate circuits. the first circuit at pin 1 and 2. pin 1 as input and pin 2 as output. the second circuit at pin 3 and 4. pin 3 as input and pin 4 as output. the third circuit at pin 5 and 6. pin 5 as input and pin 6 as output. the fourth circuit at pin 8 and 9. pin 9 as input and pin 8 as output. the fifth circuit at pin 11 and 10. pin 11 as input and pin 10 as output. the last circuit at pin 13 and 12. pin 13 as input and pin 12 as output. pin 7 as GND and  pin 14 as Vcc.
+
+
+Truth Table
+1. Using A debounce switch (HIGH-active)
+Input Output
+  1     0
+  0     1
+
+2. Using B debounce switch (LOW active)
+Input Output
+  0     1
+  1     0
+
+
+Demonstration video /  Wiring Diagram on Digital Trainer : https://youtu.be/55x9KWTLd4k
+--------------------------------------------------------------------------------------------
+
+
+MC14044BCP
+Quad R-S Latches, Enable controlled
+
+Description
+IC 4044 is a quad R-S latch IC made with CMOS technology. Each latch has Set (S) and Reset (R) inputs with an independent Q output, controlled by a common Enable pin. When Enable = HIGH, the outputs are active: when Enable = LOW, outputs are in high-impedance (open circuit) state.
+
+Pin ArrangemenTruth Table
+- pin 1 = Q3
+- pin 2 = NC
+- pin 3 = S0'
+- pin 4 = R0'
+- pin 5 = E
+- pin 6 = R1'
+- pin 7 = S1'
+- pin 8 = GND
+- pin 9 = Q1
+- pin 10 = Q2
+- pin 11 = S2'
+- pin 12 = R2'
+- pin 13 = Q0
+- pin 14 = R3'
+- pin 15 = S3'
+- pin 16 = vcc 
+
+INPUT OUTPUT
+Set Reset     Q
+ 0    0       0
+ 0    1       1
+ 1    0       0
+ 1    1    No change
+
+
+Demonstration video/Diagram on Digital Trainer : https://youtu.be/f9_Wfc4YlQY
+--------------------------------------------------------------------------------------------
+
+
+
+TC4043BP
+Quad R-S Latches, Enable controlled
+
+Description
+IC 4043 is a quad R-S latch IC made with CMOS technology. Each latch has Set (S) and Reset (R) input an independent Q output, controlled by a common Enable pin. When Enable = HIGH, the outputs are active, when Enable = LOW, outputs are in high-impedance (open circuit) state.
+
+Pin Arrangement
+- pin 1 = Q3
+- pin 2 = Q0
+- pin 3 = R0
+- pin 4 = S0
+- pin 5 = E
+- pin 6 = S1
+- pin 7 = R1
+- pin 8 = GND
+- pin 9 = Q1
+- pin 10 = Q2
+- pin 11 = R2
+- pin 12 = S2
+- pin 13 = NC
+- pin 14 = S3
+- pin 15 = R3
+- pin 16 = vcc 
+
+
+Truth Table
+INPUT OUTPUT
+Set Reset     Q
+ 0    0   No change
+ 0    1       0
+ 1    0       1
+ 1    1       1
+Demonstration video / Wiring Diagram on Digital Trainer : https://youtu.be/er6Kf3dRmSw
