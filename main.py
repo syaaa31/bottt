@@ -13,7 +13,7 @@ PORT = int(os.getenv("PORT", 8000))  # Fake port for Render
 # 🌐 OpenAI client (Groq)
 client = OpenAI(
     api_key=GROQ_API_KEY,
-    base_url="https://api.groq.ai/v1"
+    base_url="https://api.groq.com/openai/v1"
 )
 
 # 📄 Load notes
@@ -66,3 +66,4 @@ threading.Thread(target=run_dummy_server, daemon=True).start()
 # ▶️ Start bot
 if __name__ == "__main__":
     app.run_polling()
+
