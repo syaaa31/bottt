@@ -1,16 +1,14 @@
 import os
-import time
+import asyncio
 from flask import Flask, request
 from telegram import Bot, Update
 from telegram.constants import ChatAction
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from openai import OpenAI
 
 # 🔑 Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Initialize bot
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
@@ -24,20 +22,11 @@ try:
 except FileNotFoundError:
     notes_text = "⚠️ Notes file not found. Please upload notes.txt."
 
-# 👋 /start command
-async def start(update: Update, context):
-    await update.message.reply_text(
-        "Haii everyone! 👋\nI'm your hybrid digital trainer AI bot 🤖\n\n"
-        "Ask me anything based on the notes!"
-    )
-
-# 💬 Handle user messages
-async def handle_message(update: Update, context):
-    user_question = update.message.text
-
-    # Simulate typing
-    await bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
-    time.sleep(1)  # simulate delay
+# 🔹 Helper async function to process messages
+async def process_message(chat_id, user_question):
+    # Show typing
+    await bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
+    await asyncio.sleep(1)  # non-blocking delay
 
     # Call Groq API
     response = client.chat.completions.create(
@@ -49,18 +38,31 @@ async def handle_message(update: Update, context):
     )
 
     bot_reply = response.choices[0].message.content
-    await update.message.reply_text(bot_reply)
+    await bot.send_message(chat_id=chat_id, text=bot_reply)
 
-# Telegram application (dispatcher)
-application = ApplicationBuilder().token(BOT_TOKEN).build()
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# 👋 Handle /start command
+@app.route(f"/{BOT_TOKEN}/start", methods=["POST"])
+def start_command():
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
+    chat_id = update.effective_chat.id
+    bot.send_message(
+        chat_id=chat_id,
+        text="Haii everyone! 👋\nI'm your hybrid digital trainer AI bot 🤖\n\nAsk me anything based on the notes!"
+    )
+    return "ok", 200
 
-# Flask route for webhook
+# 💬 Handle all other messages
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put(update)
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
+    chat_id = update.effective_chat.id
+    user_text = update.message.text
+
+    # Run the async function in the background
+    asyncio.run(process_message(chat_id, user_text))
+
     return "ok", 200
 
 # Root route
@@ -68,6 +70,6 @@ def webhook():
 def index():
     return "Bot is running!", 200
 
-# ▶️ Run Flask app (only for local testing; Render uses gunicorn)
+# ▶️ Run Flask app locally
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
