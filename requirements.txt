@@ -1,2 +1,8 @@
+python-telegram-bot==20.3
+openai==1.35.10
+PyPDF2==3.0.1
+nest_asyncio==1.6.0
+
+
 
 
