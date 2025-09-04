@@ -1,51 +1,50 @@
 import os
 from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import Dispatcher, CommandHandler, MessageHandler, filters
+from telegram import Update, Bot
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.constants import ChatAction
 from openai import OpenAI
-import time
-import threading
+import asyncio
 
-# 🔑 Load secrets from environment variables
+# 🔑 Environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_URL = "https://api.groq.com/v1"  # your Groq endpoint
 
-bot = Bot(token=BOT_TOKEN)
-app = Flask(__name__)
-dispatcher = Dispatcher(bot, None, use_context=True)
+# 🌟 Groq API client
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    api_base="https://api.groq.com/v1"
+)
 
-# 📄 Load notes from file
+# 📄 Load notes
 try:
     with open("notes.txt", "r", encoding="utf-8") as f:
         notes_text = f.read()
 except FileNotFoundError:
     notes_text = "⚠️ Notes file not found. Please upload notes.txt."
 
-# Initialize Groq client
-client = OpenAI(api_key=GROQ_API_KEY, api_base=GROQ_URL)
+# 🔹 Flask app
+app = Flask(__name__)
+bot = Bot(token=BOT_TOKEN)
+# Create the Application for p-t-b
+application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# 👋 /start command
-def start(update, context):
-    update.message.reply_text(
+# 👋 /start handler
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
         "Haii everyone! 👋\nI'm your hybrid digital trainer AI bot 🤖\n\n"
         "Ask me anything based on the notes!"
     )
 
-# 💬 Handle questions with typing simulation
-def handle_message(update, context):
+# 💬 Message handler
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
     user_question = update.message.text
-    chat_id = update.message.chat_id
 
-    # Simulate typing
-    def send_typing():
-        bot.send_chat_action(chat_id=chat_id, action="typing")
-        time.sleep(1)  # simulate delay
+    # Show typing action
+    await bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
 
-    typing_thread = threading.Thread(target=send_typing)
-    typing_thread.start()
-
-    # Request Groq API
+    # Request to Groq
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
@@ -53,26 +52,27 @@ def handle_message(update, context):
             {"role": "user", "content": f"Notes:\n{notes_text}\n\nQuestion: {user_question}"}
         ]
     )
-
-    typing_thread.join()
     bot_reply = response.choices[0].message.content
-    update.message.reply_text(bot_reply)
+    await update.message.reply_text(bot_reply)
 
-# 🚀 Add handlers
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# Add handlers
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# 🔗 Webhook route
+# 🔹 Flask webhook route
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "OK", 200
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
+    asyncio.run(application.update_queue.put(update))
+    return "OK"
 
-# ▶️ Health check
+# 🔹 Flask root
 @app.route("/")
 def index():
-    return "Bot is running!", 200
+    return "Bot is running ✅"
 
+# ▶️ Run Flask (Render web service)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
