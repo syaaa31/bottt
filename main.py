@@ -64,8 +64,12 @@ app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 nest_asyncio.apply()
 
 # ▶️ Async main loop
+# ▶️ Async main loop
 async def main():
     await app.run_polling()
 
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(main())
+
+
