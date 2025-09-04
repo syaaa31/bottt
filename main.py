@@ -1,40 +1,51 @@
 import os
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from telegram.constants import ChatAction
+from flask import Flask, request
+from telegram import Bot, Update
+from telegram.ext import Dispatcher, CommandHandler, MessageHandler, filters
 from openai import OpenAI
+import time
+import threading
 
-# 🔑 Get secrets from environment
+# 🔑 Load secrets from environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-PORT = int(os.getenv("PORT", 8000))  # Fake port for Render
+GROQ_URL = "https://api.groq.com/v1"  # your Groq endpoint
 
-# 🌐 OpenAI client (Groq)
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
-)
+bot = Bot(token=BOT_TOKEN)
+app = Flask(__name__)
+dispatcher = Dispatcher(bot, None, use_context=True)
 
-# 📄 Load notes
+# 📄 Load notes from file
 try:
     with open("notes.txt", "r", encoding="utf-8") as f:
         notes_text = f.read()
 except FileNotFoundError:
     notes_text = "⚠️ Notes file not found. Please upload notes.txt."
 
-# 👋 /start
-async def start(update, context):
-    await update.message.reply_text(
+# Initialize Groq client
+client = OpenAI(api_key=GROQ_API_KEY, api_base=GROQ_URL)
+
+# 👋 /start command
+def start(update, context):
+    update.message.reply_text(
         "Haii everyone! 👋\nI'm your hybrid digital trainer AI bot 🤖\n\n"
         "Ask me anything based on the notes!"
     )
 
-# 💬 Handle questions
-async def handle_message(update, context):
+# 💬 Handle questions with typing simulation
+def handle_message(update, context):
     user_question = update.message.text
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+    chat_id = update.message.chat_id
 
+    # Simulate typing
+    def send_typing():
+        bot.send_chat_action(chat_id=chat_id, action="typing")
+        time.sleep(1)  # simulate delay
+
+    typing_thread = threading.Thread(target=send_typing)
+    typing_thread.start()
+
+    # Request Groq API
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
@@ -42,28 +53,26 @@ async def handle_message(update, context):
             {"role": "user", "content": f"Notes:\n{notes_text}\n\nQuestion: {user_question}"}
         ]
     )
+
+    typing_thread.join()
     bot_reply = response.choices[0].message.content
-    await update.message.reply_text(bot_reply)
+    update.message.reply_text(bot_reply)
 
-# 🚀 Telegram bot
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# 🚀 Add handlers
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# 🖥 Dummy HTTP server for Render
-class DummyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is running")
+# 🔗 Webhook route
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "OK", 200
 
-def run_dummy_server():
-    httpd = HTTPServer(("", PORT), DummyHandler)
-    httpd.serve_forever()
+# ▶️ Health check
+@app.route("/")
+def index():
+    return "Bot is running!", 200
 
-threading.Thread(target=run_dummy_server, daemon=True).start()
-
-# ▶️ Start bot
 if __name__ == "__main__":
-    app.run_polling()
-
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
