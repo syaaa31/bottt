@@ -1,6 +1,8 @@
 Flask==3.1.2
-gunicorn
 python-telegram-bot==20.3
 openai==1.35.10
+gunicorn==23.0.0
 nest_asyncio==1.6.0
-
+httpx==0.24.1
+anyio==4.10.0
+pydantic==2.11.7
