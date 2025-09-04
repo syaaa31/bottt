@@ -1,19 +1,22 @@
 import os
+import time
 from flask import Flask, request
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from telegram.constants import ChatAction
+from telegram import Bot, Update, ChatAction
+from telegram.ext import CommandHandler, MessageHandler, filters, Application
 from openai import OpenAI
-import asyncio
 
-# 🔑 Environment variables
+# 🔑 Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# 🌟 Groq API client
+# Telegram bot
+bot = Bot(token=BOT_TOKEN)
+app = Flask(__name__)
+
+# Groq client
 client = OpenAI(
     api_key=GROQ_API_KEY,
-    api_base="https://api.groq.com/v1"
+    api_type="groq"  # ✅ Use Groq API
 )
 
 # 📄 Load notes
@@ -23,28 +26,22 @@ try:
 except FileNotFoundError:
     notes_text = "⚠️ Notes file not found. Please upload notes.txt."
 
-# 🔹 Flask app
-app = Flask(__name__)
-bot = Bot(token=BOT_TOKEN)
-# Create the Application for p-t-b
-application = ApplicationBuilder().token(BOT_TOKEN).build()
-
-# 👋 /start handler
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# 👋 /start command
+async def start(update: Update, context):
     await update.message.reply_text(
         "Haii everyone! 👋\nI'm your hybrid digital trainer AI bot 🤖\n\n"
         "Ask me anything based on the notes!"
     )
 
-# 💬 Message handler
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
+# 💬 Handle user messages
+async def handle_message(update: Update, context):
     user_question = update.message.text
 
-    # Show typing action
-    await bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
+    # Simulate typing...
+    await bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+    time.sleep(1)  # optional delay for realism
 
-    # Request to Groq
+    # Query Groq
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[
@@ -52,27 +49,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             {"role": "user", "content": f"Notes:\n{notes_text}\n\nQuestion: {user_question}"}
         ]
     )
+
     bot_reply = response.choices[0].message.content
     await update.message.reply_text(bot_reply)
 
-# Add handlers
+# Telegram Application for webhook
+application = Application.builder().token(BOT_TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# 🔹 Flask webhook route
+# Flask route for webhook
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
-    data = request.get_json(force=True)
-    update = Update.de_json(data, bot)
-    asyncio.run(application.update_queue.put(update))
-    return "OK"
+    update = Update.de_json(request.get_json(force=True), bot)
+    application.process_update(update)
+    return "ok", 200
 
-# 🔹 Flask root
+# Root route for testing
 @app.route("/")
 def index():
-    return "Bot is running ✅"
+    return "Bot is running!", 200
 
-# ▶️ Run Flask (Render web service)
+# ▶️ Run Flask (Gunicorn will run this in production)
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
