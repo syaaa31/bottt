@@ -1,6 +1,4 @@
-Flask>=3.1.2
+flask
+requests
+openai
 gunicorn
-python-telegram-bot>=20.3
-openai>=1.35.10
-nest_asyncio
-
