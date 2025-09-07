@@ -10,8 +10,11 @@ TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-# 🧠 Groq client
-client = OpenAI(api_key=GROQ_API_KEY)
+# 🧠 Groq client (force requests to Groq, not OpenAI)
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1"
+)
 
 # 📄 Load notes
 try:
